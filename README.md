@@ -17,14 +17,20 @@ Multi-node-multi-TPU fine-tuning & deployment of BERT on GCP.
   - `cloudbuild.builds.editor` - build and push container images using Cloud Build
   - `ml.developer` - submit training/inference jobs to Ai Platform
 
+## Training the model
+
+### Locally
+
+```bash
+  bash scripts/train-local.sh
+```
+
+
+
 ## ToDo
 
-- Environment setup
-- Dataset selection
-- Preprocessing
-- Local training
 - Single GPU cloud training
 - Multi GPU cloud training
 - Multi-node multi GPU cloud training
 - Multi-node multi TPU cloud training
-
+- Deploy the model for scalable prediction
