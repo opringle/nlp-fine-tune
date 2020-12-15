@@ -1,4 +1,4 @@
-FROM nvidia/cuda:10.2-runtime
+FROM nvidia/cuda:10.2-cudnn7-runtime
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
