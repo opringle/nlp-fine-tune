@@ -8,7 +8,7 @@ BUCKET_NAME=nlp-fine-tuner
 CONFIG_FILE=training_configs/gpu_config.yaml
 
 DATE=$(date '+%Y%m%d_%H%M%S')
-JOB_NAME=bp_$(date +%Y%m%d_%H%M%S)
+JOB_NAME=text_classifier_${DATE}
 
 JOB_DIR=gs://${BUCKET_NAME}/trainer
 REGION=us-central1
@@ -23,4 +23,4 @@ gcloud ai-platform jobs submit training "${JOB_NAME}" \
   --job-dir $JOB_DIR \
   --train-data-file $TRAIN_DATA_FILE \
   --epochs 5 \
-  --batch-size 1 \
+  --batch-size 6 \

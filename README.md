@@ -60,21 +60,27 @@ Leverage GCP Ai Platform to speed up your ML workflow.
   bash scripts/train-cloud-gpu.sh
 ```
 
+## Results training Roberta large (334M parameters)
+
+| batch size |        gpu        | number gpus |  worker type  | CPU utilization | Memory utilization | GPU memory utizilization | GPU utilization | examples per second |
+|------------|-------------------|-------------|---------------|-----------------|--------------------|--------------------------|-----------------|---------------------|
+|     1      | NVIDIA_TESLA_K80  |      1      | n1-standard-4 |        25%      |          36%       |            72%           |      100%       |           1         | 
+|     2      | NVIDIA_TESLA_K80  |      1      | n1-standard-4 |        25%      |          36%       |            88%           |      100%       |          1.5        | 
+|     4      | NVIDIA_TESLA_K80  |      1      | n1-standard-4 |         -       |           -        |             -            |        -        |          OOM        | 
+|     4      | NVIDIA_TESLA_V100 |      1      | n1-standard-4 |        26%      |          46%       |            94%           |      92%        |          9          | 
+|     6      | NVIDIA_TESLA_V100 |      1      | n1-standard-4 |        26%      |          46%       |            94%           |      92%        |          OOM        |
+|     8      | CLOUD_TPU_V3      |      1      | n1-standard-4 |        23%      |          10%       |             -            |        -        |          ---        | 
+
 ## ToDo
 
-- Single GPU cloud training
-  - Torch.cuda shows zero devices...
-  - Hard to test locally...
-  - 
+- Single V3 TPU training
 
 
-
-
-- Multi GPU cloud training
 - Multi GPU cloud training with DistributedDataParallel
-- Multi node multi GPU training with DistributedDataParallel
-- Train on data uploaded to GCS
+- Multi node, multi GPU training
 - Add model parameters to docker image so they don't need to be downloaded
+- Train on data uploaded to GCS
+- Multi node multi GPU training with DistributedDataParallel
 - Visualize training with tensorboard
 - Use half precision training (FP16) to increase throughput
 - View GPU utliziation during training
@@ -89,10 +95,11 @@ Leverage GCP Ai Platform to speed up your ML workflow.
 
 ## Notes
 
-The application downloads the model before running. This makes it very slow.
+- With 8 V100 GPUS I can train on 72 examples per second (30 minutes per epoch on AG News 120k training set)
+- With multi node multi GPU training, I can train a little faster but I'm still severly limited by GPU memory
+- Training on V3 TPUs will allow for much larger batch sizes and throughput
 
-Instead it could be much faster download the model in the docker container. Then when the container is installed the application can start immediately.
-Alternatively I could upload the model to GCS...
+The application downloads the model before running. This makes it very slow.
 
 You can trigger a cloud build from a push to a specific branch of your repo. This means when you update master your infrastructure automatically updates without you doing anything.
 
@@ -101,3 +108,4 @@ We could have a machine learning application running in a container on cloud run
 Fine tuning language models can be slow because the models have so many parameters that only small batches can be used during fine-tuning.
 
 Hugging face have written examples for all this here - https://github.com/huggingface/transformers/tree/master/examples/text-classification
+

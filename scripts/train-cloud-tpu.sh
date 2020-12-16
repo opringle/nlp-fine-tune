@@ -12,7 +12,7 @@ IMAGE_TAG=latest
 IMAGE_URI=gcr.io/$PROJECT_ID/$IMAGE_REPO_NAME:$IMAGE_TAG
 
 DATE=$(date '+%Y%m%d_%H%M%S')
-JOB_NAME=bp_$(date +%Y%m%d_%H%M%S)
+JOB_NAME=text-classifier-${DATE}
 
 JOB_DIR=gs://${BUCKET_NAME}/trainer
 REGION=us-central1
