@@ -24,6 +24,23 @@ Leverage GCP Ai Platform to speed up your ML workflow.
   gsutil mb gs://nlp-fine-tuner
 ```
 
+### Using TPUs
+
+- Create a Cloud TPU Service Account
+
+```bash
+  gcloud beta services identity create --service tpu.googleapis.com --project $PROJECT_ID
+```
+
+- Give the service account required permissions
+
+```bash
+  gsutil acl ch -u service-127094582491@cloud-tpu.iam.gserviceaccount.com:READER gs://nlp-fine-tuner
+  gsutil acl ch -u service-127094582491@cloud-tpu.iam.gserviceaccount.com:WRITER gs://nlp-fine-tuner
+  gcloud projects add-iam-policy-binding $PROJECT_ID \
+    --member serviceAccount:service-127094582491@cloud-tpu.iam.gserviceaccount.com --role roles/ml.serviceAgent
+```
+
 ## Fine-tune a language model
 
 ### Test code locally on CPU
@@ -60,7 +77,7 @@ Leverage GCP Ai Platform to speed up your ML workflow.
   bash scripts/train-cloud-gpu.sh
 ```
 
-## Results training Roberta large (334M parameters)
+## Results training Roberta large (355M parameters)
 
 | batch size |        gpu        | number gpus |  worker type  | CPU utilization | Memory utilization | GPU memory utizilization | GPU utilization | examples per second |
 |------------|-------------------|-------------|---------------|-----------------|--------------------|--------------------------|-----------------|---------------------|
@@ -70,6 +87,9 @@ Leverage GCP Ai Platform to speed up your ML workflow.
 |     4      | NVIDIA_TESLA_V100 |      1      | n1-standard-4 |        26%      |          46%       |            94%           |      92%        |          9          | 
 |     6      | NVIDIA_TESLA_V100 |      1      | n1-standard-4 |        26%      |          46%       |            94%           |      92%        |          OOM        |
 |     8      | CLOUD_TPU_V3      |      1      | n1-standard-4 |        23%      |          10%       |             -            |        -        |          ---        | 
+
+Team currently use Roberta base = 125M parameters. Roberta large showed around 5% improvement on many tasks.
+This allows them to train Roberta large = 355M parameters
 
 ## ToDo
 
