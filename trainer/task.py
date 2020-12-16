@@ -84,7 +84,7 @@ if __name__ == '__main__':
     # fit the model to the data
     device_count = torch.cuda.device_count()
     if device_count > 0:
-        assert BATCH_SIZE > device_count == 0, 'Batch size is not larger than device count. Batches cannot be distributed across devices.'
+        assert BATCH_SIZE >= device_count, 'Batch size () is not >= device count (). Batches cannot be distributed across devices.'.format(BATCH_SIZE, device_count)
         device = 'cuda'
     else:
         device = 'cpu'
