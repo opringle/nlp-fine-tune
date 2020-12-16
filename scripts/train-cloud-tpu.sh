@@ -21,7 +21,6 @@ TRAIN_DATA_FILE=gs://${BUCKET_NAME}/data/df.pickle
 set -v
 
 gcloud ai-platform jobs submit training "${JOB_NAME}" \
-  --master-image-uri $IMAGE_URI \
   --region $REGION \
   --config $CONFIG_FILE \
   -- \

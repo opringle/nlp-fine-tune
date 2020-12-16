@@ -5,6 +5,7 @@ from datasets import load_dataset
 from transformers import RobertaTokenizer
 
 import torch
+import torch.nn as nn
 from torch.nn import CrossEntropyLoss
 from tqdm import tqdm
 
@@ -75,13 +76,19 @@ if __name__ == '__main__':
     train_dataloader = get_dataloader(train_ds, tokenizer, batch_size=BATCH_SIZE)
     test_dataloader = get_dataloader(test_ds, tokenizer, batch_size=BATCH_SIZE)
 
-
     model = TorchTextClassifier(num_classes=4)
+    # model = nn.DataParallel(model)
     optimizer = torch.optim.AdamW(params=model.parameters(), lr=1e-5)
     loss_fn = CrossEntropyLoss()
 
     # fit the model to the data
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    device_count = torch.cuda.device_count()
+    if device_count > 0:
+        assert BATCH_SIZE > device_count == 0, 'Batch size is not a multiple of device count. Training cannot be distributed across devices.'
+        device = 'cuda'
+    else:
+        device = 'cpu'
+    logging.info("{} devices detected. Device mode {}".format(device_count, device))
     model.train().to(device)
     for epoch in range(EPOCHS):
         for i, batch in enumerate(tqdm(train_dataloader)):

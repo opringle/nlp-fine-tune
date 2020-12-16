@@ -7,10 +7,6 @@ PROJECT_ID=$(gcloud config list project --format "value(core.project)")
 BUCKET_NAME=nlp-fine-tuner
 CONFIG_FILE=training_configs/gpu_config.yaml
 
-IMAGE_REPO_NAME=nlp
-IMAGE_TAG=latest
-IMAGE_URI=gcr.io/$PROJECT_ID/$IMAGE_REPO_NAME:$IMAGE_TAG
-
 DATE=$(date '+%Y%m%d_%H%M%S')
 JOB_NAME=bp_$(date +%Y%m%d_%H%M%S)
 
@@ -21,7 +17,6 @@ TRAIN_DATA_FILE=gs://${BUCKET_NAME}/data/df.pickle
 set -v
 
 gcloud ai-platform jobs submit training "${JOB_NAME}" \
-  --master-image-uri $IMAGE_URI \
   --region $REGION \
   --config $CONFIG_FILE \
   -- \
