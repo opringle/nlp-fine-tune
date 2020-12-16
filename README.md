@@ -12,7 +12,7 @@ Leverage GCP Ai Platform to speed up your ML workflow.
 ```bash
     pyenv virtualenv 3.8.6 nlp && pyenv local nlp
 ```
-- Install required python packages
+- Install pytorch and other required python packages
 ```bash
     pip install torch && pip install -r requirements.txt
 ```
@@ -63,6 +63,13 @@ Leverage GCP Ai Platform to speed up your ML workflow.
 ## ToDo
 
 - Single GPU cloud training
+  - Torch.cuda shows zero devices...
+  - Hard to test locally...
+  - 
+
+
+
+
 - Multi GPU cloud training
 - Multi GPU cloud training with DistributedDataParallel
 - Multi node multi GPU training with DistributedDataParallel
