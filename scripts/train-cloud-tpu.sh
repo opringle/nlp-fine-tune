@@ -23,5 +23,5 @@ gcloud ai-platform jobs submit training "${JOB_NAME}" \
   --job-dir $JOB_DIR \
   --train-data-file $TRAIN_DATA_FILE \
   --distribution-strategy tpu \
-  --epochs 5 \
-  --batch-size 2 \
+  --epochs 1 \
+  --batch-size 32 \
