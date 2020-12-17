@@ -1,5 +1,5 @@
 # pull from latest tensorflow gpu enabled image
-FROM tensorflow/tensorflow:latest-gpu
+FROM tensorflow/tensorflow:2.3.0-gpu
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
