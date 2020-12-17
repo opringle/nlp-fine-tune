@@ -11,7 +11,8 @@ class KerasTextClassifier(tf.keras.Model):
 
     def call(self, inputs, training=False, mask=None):
         transformer_features = self.transformer(inputs)
-        print(transformer_features)
-        # TODO: clearly fooked
-        output = self.final_layer(transformer_features)
+        pooler_output = transformer_features.pooler_output
+        logging.debug("pooler output shape={}".format(pooler_output.shape))
+        output = self.final_layer(pooler_output)
+        logging.debug("output shape={}".format(output.shape))
         return output

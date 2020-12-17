@@ -117,12 +117,12 @@ if __name__ == '__main__':
     tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=os.path.join(args.job_dir, 'logs'))
     model.fit(
         train_ds,
-        validation_data=val_ds,
+        validation_data=test_ds,
         epochs=EPOCHS,
         callbacks=[tensorboard_callback],
     )
     
-    loss, accuracy = model.evaluate(val_ds)
+    loss, accuracy = model.evaluate(test_ds)
     logging.info("Accuracy {}".format(accuracy))
 
     hpt = hypertune.HyperTune()
