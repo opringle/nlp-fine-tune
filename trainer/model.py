@@ -1,17 +1,17 @@
 import logging
-import torch
-from transformers import RobertaModel
+import tensorflow as tf
+from tensorflow.keras import layers
+from transformers import TFRobertaModel
 
-class TorchTextClassifier(torch.nn.Module):
-    def __init__(self, num_classes: int):
-        super(TorchTextClassifier, self).__init__()
-        self.transformer = RobertaModel.from_pretrained("roberta-large")
-        self.classifier = torch.nn.Linear(in_features=1024, out_features=num_classes, bias=True)
+class KerasTextClassifier(tf.keras.Model):
+    def __init__(self, num_classes: int, pretrained_roberta_name: str):
+        super(KerasTextClassifier, self).__init__()
+        self.transformer = TFRobertaModel.from_pretrained(pretrained_roberta_name)
+        self.final_layer = layers.Dense(num_classes)
 
-    def forward(self, input_ids, attention_mask):
-        base_model_output = self.transformer(input_ids=input_ids, attention_mask=attention_mask)
-        pooler_output = base_model_output.pooler_output
-        logging.debug("pooler output shape={}".format(pooler_output.shape))
-        output = self.classifier(pooler_output)
-        logging.debug("output shape={}".format(output.shape))
+    def call(self, inputs, training=False, mask=None):
+        transformer_features = self.transformer(inputs)
+        print(transformer_features)
+        # TODO: clearly fooked
+        output = self.final_layer(transformer_features)
         return output

@@ -1,4 +1,5 @@
-FROM nvidia/cuda:10.1-cudnn7-runtime
+# pull from latest tensorflow gpu enabled image
+FROM tensorflow/tensorflow:latest-gpu
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -6,23 +7,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Install python
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends software-properties-common \
-    && add-apt-repository ppa:deadsnakes/ppa \
-    && apt-get update \
-    && apt-get install -y --no-install-recommends python3.8-distutils \
-    && update-alternatives --install /usr/bin/python python /usr/bin/python3 10 \
-    && rm -rf /var/lib/apt/lists/*
-
 # Install latest pip
 RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
     python get-pip.py && \
     pip install setuptools && \
     rm get-pip.py
-
-# install pytorch
-RUN pip install torch==1.7.1+cu101 torchvision==0.8.2+cu101 torchaudio==0.7.2 -f https://download.pytorch.org/whl/torch_stable.html
 
 WORKDIR /root
 

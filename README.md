@@ -10,11 +10,11 @@ Leverage GCP Ai Platform to speed up your ML workflow.
 - [install pyenv](https://realpython.com/intro-to-pyenv/)
 - Create & activate python virtual environment
 ```bash
-    pyenv virtualenv 3.8.6 nlp && pyenv local nlp
+    pyenv virtualenv 3.6.9 nlp && pyenv local nlp
 ```
-- Install pytorch and other required python packages
+- Install tensorflow and other required python packages
 ```bash
-    pip install torch && pip install -r requirements.txt
+    pip install tensorflow && pip install -r requirements.txt
 ```
 - Ensure you have the following GCP roles:
   - `cloudbuild.builds.editor` - build and push container images using Cloud Build
@@ -60,7 +60,9 @@ Leverage GCP Ai Platform to speed up your ML workflow.
   bash scripts/train-cloud-gpu.sh
 ```
 
-## Results training Roberta large (334M parameters)
+## Why use TPUs?
+
+Results training Roberta large (334M parameters)
 
 | batch size |        gpu        | number gpus |  worker type  | CPU utilization | Memory utilization | GPU memory utizilization | GPU utilization | examples per second |
 |------------|-------------------|-------------|---------------|-----------------|--------------------|--------------------------|-----------------|---------------------|
@@ -70,6 +72,11 @@ Leverage GCP Ai Platform to speed up your ML workflow.
 |     4      | NVIDIA_TESLA_V100 |      1      | n1-standard-4 |        26%      |          46%       |            94%           |      92%        |          9          | 
 |     6      | NVIDIA_TESLA_V100 |      1      | n1-standard-4 |        26%      |          46%       |            94%           |      92%        |          OOM        |
 |     8      | CLOUD_TPU_V3      |      1      | n1-standard-4 |        23%      |          10%       |             -            |        -        |          ---        | 
+
+
+## Learnings
+
+- It is possible to use pytorch with TPUs, however, it's a pain in the arse. You need to install the xla library and make significant modifications to the code. Using Keras, there are very few modifications to the training code in order to run on TPUs or distribute across multiple nodes.
 
 ## ToDo
 

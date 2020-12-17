@@ -1,15 +1,12 @@
 import argparse
 import logging
-
+import os
 from datasets import load_dataset
 from transformers import RobertaTokenizer
-
-import torch
-import torch.nn as nn
-from torch.nn import CrossEntropyLoss
-from tqdm import tqdm
-
-from .model import TorchTextClassifier
+import hypertune
+import tensorflow as tf
+from tensorflow import keras
+from .model import KerasTextClassifier
 
 def parse_args():
     parser = argparse.ArgumentParser(description='GCP training application')
@@ -28,7 +25,8 @@ def parse_args():
         default=None,
         choices=[
             'MirroredStrategy',
-            'MultiWorkerMirroredStrategy'
+            'MultiWorkerMirroredStrategy',
+            'tpu',
         ],
     )
     
@@ -52,12 +50,32 @@ def parse_args():
     return parser.parse_args()
 
 
-def get_dataloader(dataset, tokenizer, batch_size=32):
+def get_ds(dataset, tokenizer, batch_size=32, shuffle=True):
     dataset = dataset.map(lambda examples: tokenizer(examples['text'], truncation=True, padding='max_length'), batched=True)
     dataset = dataset.map(lambda examples: {'labels': examples['label']}, batched=True)
-    dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size)
-    return dataloader
+    dataset.set_format(type='tensorflow', columns=['input_ids', 'attention_mask', 'labels'])
+    features = {x: dataset[x].to_tensor(default_value=0, shape=[None, 512]) for x in ['input_ids', 'attention_mask']}
+    ds = tf.data.Dataset.from_tensor_slices((features, dataset["labels"]))
+    if shuffle:
+        ds.shuffle(buffer_size=len(dataset))
+    ds = ds.batch(batch_size)
+    return ds
+
+
+def get_strategy(distribution_strategy: str):
+    if distribution_strategy == 'MirroredStrategy':
+        strategy = tf.distribute.MirroredStrategy()
+    elif distribution_strategy == 'MultiWorkerMirroredStrategy':
+        strategy = tf.distribute.experimental.MultiWorkerMirroredStrategy()
+    elif distribution_strategy == 'tpu':
+        resolver = tf.distribute.cluster_resolver.TPUClusterResolver(tpu='')
+        tf.config.experimental_connect_to_cluster(resolver)
+        tf.tpu.experimental.initialize_tpu_system(resolver)
+        strategy = tf.distribute.TPUStrategy(resolver)
+    else:
+        strategy = tf.distribute.OneDeviceStrategy(device="/gpu:0")
+    logging.info('Training with strategy: {}'.format(strategy))
+    return strategy
 
 
 if __name__ == '__main__':
@@ -66,38 +84,50 @@ if __name__ == '__main__':
     
     MODEL_NAME = 'roberta-large'
     EPOCHS = args.epochs
-    BATCH_SIZE = args.batch_size
+    BATCH_SIZE_PER_REPLICA = args.batch_size
 
-    # load, encode and format input data for pytorch model
+    # handle whether training on cpu, gpu, multi gpu, multi node multi gpu or tpu
+    strategy = get_strategy(args.distribution_strategy)
+    num_replicas_in_sync = strategy.num_replicas_in_sync
+    BATCH_SIZE = BATCH_SIZE_PER_REPLICA * num_replicas_in_sync
+    logging.info(
+        'Number of devices: {}\t Batch size (before distribution): {}'.format(
+            num_replicas_in_sync,
+            BATCH_SIZE
+        )
+    )
+
+    # get loaders for model
     datasets = load_dataset('ag_news')
     train_ds = datasets['train']
     test_ds = datasets['test']
     tokenizer = RobertaTokenizer.from_pretrained(MODEL_NAME)
-    train_dataloader = get_dataloader(train_ds, tokenizer, batch_size=BATCH_SIZE)
-    test_dataloader = get_dataloader(test_ds, tokenizer, batch_size=BATCH_SIZE)
+    train_ds = get_ds(train_ds, tokenizer, batch_size=BATCH_SIZE, shuffle=True)
+    test_ds = get_ds(test_ds, tokenizer, batch_size=BATCH_SIZE)
 
-    model = TorchTextClassifier(num_classes=4)
-    # model = nn.DataParallel(model)
-    optimizer = torch.optim.AdamW(params=model.parameters(), lr=1e-5)
-    loss_fn = CrossEntropyLoss()
+    # using scope() and fit() allows Keras to handle complexity of distributed training
+    with strategy.scope():
+        model = KerasTextClassifier(num_classes=4, pretrained_roberta_name=MODEL_NAME)
+        model.compile(
+            optimizer=keras.optimizers.Adam(learning_rate=1e-3),
+            loss=tf.keras.losses.CategoricalCrossentropy(from_logits=False),
+            metrics=['accuracy']
+        )
+    
+    tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=os.path.join(args.job_dir, 'logs'))
+    model.fit(
+        train_ds,
+        validation_data=val_ds,
+        epochs=EPOCHS,
+        callbacks=[tensorboard_callback],
+    )
+    
+    loss, accuracy = model.evaluate(val_ds)
+    logging.info("Accuracy {}".format(accuracy))
 
-    # fit the model to the data
-    device_count = torch.cuda.device_count()
-    if device_count > 0:
-        assert BATCH_SIZE >= device_count, 'Batch size () is not >= device count (). Batches cannot be distributed across devices.'.format(BATCH_SIZE, device_count)
-        device = 'cuda'
-    else:
-        device = 'cpu'
-    logging.info("{} devices detected. Device mode {}".format(device_count, device))
-    model.train().to(device)
-    for epoch in range(EPOCHS):
-        for i, batch in enumerate(tqdm(train_dataloader)):
-            features = {k: v.to(device) for k, v in batch.items() if k != 'labels'}
-            labels = batch['labels'].to(device)
-            predictions = model(**features)
-            loss = loss_fn(predictions, labels)
-            loss.backward()
-            optimizer.step()
-            optimizer.zero_grad()
-            if i % 10 == 0:
-                logging.info("Epoch {} batch {} loss={:.3f}".format(epoch, i, loss))
+    hpt = hypertune.HyperTune()
+    hpt.report_hyperparameter_tuning_metric(
+        hyperparameter_metric_tag='accuracy',
+        metric_value=accuracy,
+        # global_step=1000
+    )
