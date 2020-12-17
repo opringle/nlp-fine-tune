@@ -89,7 +89,7 @@ Results training Roberta large (334M parameters)
 |2|NVIDIA_TESLA_K80|2|n1-standard-4|25%|36%|72%|100%|0.44| 
 |8|NVIDIA_TESLA_V100|2|n1-standard-4|-|-|-|-|OOM|
 |16|CLOUD_TPU_V2|8|n1-highcpu-16|||||2400|
-|256|CLOUD_TPU_V3|8|n1-highcpu-16||||||
+|128|CLOUD_TPU_V3|8|n1-highcpu-16||||||
 
 ## Learnings
 
