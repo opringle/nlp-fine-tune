@@ -14,7 +14,7 @@ Leverage GCP as a training job management platform to speed up your ML workflow.
 ```
 - Install tensorflow and other required python packages
 ```bash
-    pip install tensorflow && pip install -r requirements.txt
+    pip install tensorflow==2.3.0 && pip install -r requirements.txt
 ```
 - Ensure you have the following GCP roles:
   - `cloudbuild.builds.editor` - build and push container images using Cloud Build
@@ -22,6 +22,19 @@ Leverage GCP as a training job management platform to speed up your ML workflow.
 - Create a storage bucket for the training data and model artifacts, logs etc.
 ```bash
   gsutil mb gs://nlp-fine-tuner
+```
+- Create a tpu service account
+
+```bash
+gcloud beta services identity create --service tpu.googleapis.com --project $PROJECT_ID
+```
+The command returns a Cloud TPU Service Account with following format:
+```bash
+  service-PROJECT_NUMBER@cloud-tpu.iam.gserviceaccount.com
+```
+- Assign roles so the service account can read/write to GCS etc (editor is lazy way to do it)
+```bash
+  gcloud projects add-iam-policy-binding $PROJECT_ID --member serviceAccount:$TPU_SERVICE_ACCOUNT --role roles/editor
 ```
 
 ## Fine-tune a language model
@@ -64,55 +77,31 @@ Leverage GCP as a training job management platform to speed up your ML workflow.
 
 Results training Roberta large (334M parameters)
 
-| batch size |        gpu        | number gpus |  worker type  | CPU utilization | Memory utilization | GPU memory utizilization | GPU utilization | examples per second |
+| batch size |        gpu        | number devices |  worker type  | CPU utilization | Memory utilization | GPU memory utizilization | GPU utilization | examples per second |
 |------------|-------------------|-------------|---------------|-----------------|--------------------|--------------------------|-----------------|---------------------|
-|     1      | NVIDIA_TESLA_K80  |      1      | n1-standard-4 |        25%      |          36%       |            72%           |      100%       |           1         | 
-|     2      | NVIDIA_TESLA_K80  |      1      | n1-standard-4 |        25%      |          36%       |            88%           |      100%       |          1.5        | 
-|     4      | NVIDIA_TESLA_K80  |      1      | n1-standard-4 |         -       |           -        |             -            |        -        |          OOM        | 
-|     4      | NVIDIA_TESLA_V100 |      1      | n1-standard-4 |        26%      |          46%       |            94%           |      92%        |          9          | 
-|     6      | NVIDIA_TESLA_V100 |      1      | n1-standard-4 |        26%      |          46%       |            94%           |      92%        |          OOM        |
-|     8      | CLOUD_TPU_V3      |      1      | n1-standard-4 |        23%      |          10%       |             -            |        -        |          ---        | 
-
+|1|NVIDIA_TESLA_K80|1|n1-standard-4|25%|36%|72%|100%|0.25| 
+|2|NVIDIA_TESLA_K80|2|n1-standard-4|25%|36%|72%|100%|0.44| 
+|8|NVIDIA_TESLA_V100|2|n1-standard-4|-|-|-|-|OOM|
+|16|CLOUD_TPU_V2|8|n1-highcpu-16||||||
+|16|CLOUD_TPU_V3|8|n1-highcpu-16||||||
 
 ## Learnings
 
-- It is possible to use pytorch with TPUs, however, it's a pain in the arse. You need to install the xla library and make significant modifications to the code. Using Keras, there are very few modifications to the training code in order to run on TPUs or distribute across multiple nodes.
+- It is possible to use pytorch with TPUs, however, it's a pain in the arse. You need to install the xla library and make significant modifications to the code. Using Keras and the strategy scope you can run in any configuration.
+- Tensorflow is slower than Pytorch by a factor of 4 on GPUs for some jobs!
+- Pytorch lightning allows you to minimize the reconfiguration work and still use pytorch :)
 
 ## ToDo
 
-- Single V3 TPU training
-
-
-- Multi GPU cloud training with DistributedDataParallel
-- Multi node, multi GPU training
+- Single V2/3 TPU training on 8 cores
+- Support training on X% of the data
+- Preprocess AG News to GCS
+- Download data to docker image so it doesn't need to be downloaded
+- Pytorch lightning refactor
+  - Upgrade to CUDA 11
+  - Upgrade to latest pytorch
+  
 - Add model parameters to docker image so they don't need to be downloaded
-- Train on data uploaded to GCS
-- Multi node multi GPU training with DistributedDataParallel
+- Package training application with local testing
 - Visualize training with tensorboard
 - Use half precision training (FP16) to increase throughput
-- View GPU utliziation during training
-
-- Multi-node multi GPU cloud training?
-- Single TPU cloud training
-- Multi TPU cloud training
-- Multi-node multi TPU cloud training
-- Deploy the model for scalable prediction
-- Plot training time vs cost for different runs
-- Automate deployment
-
-## Notes
-
-- With 8 V100 GPUS I can train on 72 examples per second (30 minutes per epoch on AG News 120k training set)
-- With multi node multi GPU training, I can train a little faster but I'm still severly limited by GPU memory
-- Training on V3 TPUs will allow for much larger batch sizes and throughput
-
-The application downloads the model before running. This makes it very slow.
-
-You can trigger a cloud build from a push to a specific branch of your repo. This means when you update master your infrastructure automatically updates without you doing anything.
-
-We could have a machine learning application running in a container on cloud run. Then have the container built and pushed whenever master changes. - https://cloud.google.com/cloud-build/docs/deploying-builds/deploy-cloud-run
-
-Fine tuning language models can be slow because the models have so many parameters that only small batches can be used during fine-tuning.
-
-Hugging face have written examples for all this here - https://github.com/huggingface/transformers/tree/master/examples/text-classification
-

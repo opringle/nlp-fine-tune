@@ -1,9 +1,13 @@
 trainingInput:
   scaleTier: CUSTOM
   masterType: n1-highcpu-16
+  masterConfig:
+    imageUri: gcr.io/education-298320/nlp:latest
   workerType: cloud_tpu
   workerCount: 1
   workerConfig:
+    imageUri: gcr.io/education-298320/nlp:latest
+    tpuTfVersion: '2.3'
     acceleratorConfig:
-      type: TPU_V3  # $8/hour
-      count: 1
+      type: TPU_V2
+      count: 8

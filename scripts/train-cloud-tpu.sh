@@ -7,12 +7,8 @@ PROJECT_ID=$(gcloud config list project --format "value(core.project)")
 BUCKET_NAME=nlp-fine-tuner
 CONFIG_FILE=training_configs/tpu_config.yaml
 
-IMAGE_REPO_NAME=nlp
-IMAGE_TAG=latest
-IMAGE_URI=gcr.io/$PROJECT_ID/$IMAGE_REPO_NAME:$IMAGE_TAG
-
 DATE=$(date '+%Y%m%d_%H%M%S')
-JOB_NAME=text-classifier-${DATE}
+JOB_NAME=text_classifier_${DATE}
 
 JOB_DIR=gs://${BUCKET_NAME}/trainer
 REGION=us-central1
@@ -26,5 +22,6 @@ gcloud ai-platform jobs submit training "${JOB_NAME}" \
   -- \
   --job-dir $JOB_DIR \
   --train-data-file $TRAIN_DATA_FILE \
+  --distribution-strategy tpu \
   --epochs 5 \
-  --batch-size 1 \
+  --batch-size 2 \

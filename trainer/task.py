@@ -1,12 +1,17 @@
 import argparse
 import logging
+import sys
 import os
 from datasets import load_dataset
 from transformers import RobertaTokenizer
 import hypertune
 import tensorflow as tf
 from tensorflow import keras
+import json
+import time
+
 from .model import KerasTextClassifier
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description='GCP training application')
@@ -40,7 +45,6 @@ def parse_args():
     group.add_argument(
         '--reuse-job-dir',
         action='store_true',
-        default=False,
         help="""
         Flag to decide if the model checkpoint should be
         re-used from the job-dir.
@@ -68,7 +72,7 @@ def get_strategy(distribution_strategy: str):
     elif distribution_strategy == 'MultiWorkerMirroredStrategy':
         strategy = tf.distribute.experimental.MultiWorkerMirroredStrategy()
     elif distribution_strategy == 'tpu':
-        resolver = tf.distribute.cluster_resolver.TPUClusterResolver(tpu='')
+        resolver = wait_for_tpu_cluster_resolver_ready()
         tf.config.experimental_connect_to_cluster(resolver)
         tf.tpu.experimental.initialize_tpu_system(resolver)
         strategy = tf.distribute.TPUStrategy(resolver)
@@ -78,9 +82,75 @@ def get_strategy(distribution_strategy: str):
     return strategy
 
 
+def _setup_logging():
+  """Sets up logging."""
+  root_logger = logging.getLogger()
+  root_logger_previous_handlers = list(root_logger.handlers)
+  for h in root_logger_previous_handlers:
+    root_logger.removeHandler(h)
+  root_logger.setLevel(logging.INFO)
+  root_logger.propagate = False
+
+  # Set tf logging to avoid duplicate logging. If the handlers are not removed,
+  # then we will have duplicate logging
+  tf_logger = logging.getLogger('TensorFlow')
+  while tf_logger.handlers:
+    tf_logger.removeHandler(tf_logger.handlers[0])
+
+  # Redirect INFO logs to stdout
+  stdout_handler = logging.StreamHandler(sys.stdout)
+  stdout_handler.setLevel(logging.INFO)
+  root_logger.addHandler(stdout_handler)
+
+  # Suppress C++ level warnings.
+  os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
+
+def wait_for_tpu_cluster_resolver_ready():
+  """Waits for `TPUClusterResolver` to be ready and return it.
+
+  Returns:
+    A TPUClusterResolver if there is TPU machine (in TPU_CONFIG). Otherwise,
+    return None.
+  Raises:
+    RuntimeError: if failed to schedule TPU.
+  """
+  tpu_config_env = os.environ.get('TPU_CONFIG')
+  if not tpu_config_env:
+    logging.info('Missing TPU_CONFIG, use CPU/GPU for training.')
+    return None
+
+  tpu_node = json.loads(tpu_config_env)
+  logging.info('Waiting for TPU to be ready: \n%s.', tpu_node)
+
+  num_retries = 40
+  for i in range(num_retries):
+    try:
+      tpu_cluster_resolver = (
+          tf.distribute.cluster_resolver.TPUClusterResolver(
+              tpu=[tpu_node['tpu_node_name']],
+              zone=tpu_node['zone'],
+              project=tpu_node['project'],
+              job_name='worker'))
+      tpu_cluster_resolver_dict = tpu_cluster_resolver.cluster_spec().as_dict()
+      if 'worker' in tpu_cluster_resolver_dict:
+        logging.info('Found TPU worker: %s', tpu_cluster_resolver_dict)
+        return tpu_cluster_resolver
+    except Exception as e:
+      if i < num_retries - 1:
+        logging.info('Still waiting for provisioning of TPU VM instance.')
+      else:
+        # Preserves the traceback.
+        raise RuntimeError('Failed to schedule TPU: {}'.format(e))
+    time.sleep(10)
+
+  # Raise error when failed to get TPUClusterResolver after retry.
+  raise RuntimeError('Failed to schedule TPU.')
+
+
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG)
     args = parse_args()
+    _setup_logging()
     
     MODEL_NAME = 'roberta-large'
     EPOCHS = args.epochs
