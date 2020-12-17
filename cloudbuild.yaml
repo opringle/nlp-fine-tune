@@ -5,3 +5,4 @@ steps:
 - name: 'gcr.io/cloud-builders/docker'
   args: ['build', '-t', 'gcr.io/education-298320/nlp', '--cache-from', 'gcr.io/education-298320/nlp:latest', '.']
 images: ['gcr.io/education-298320/nlp:latest']
+timeout: '3600s'
