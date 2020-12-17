@@ -79,7 +79,7 @@ def get_strategy(distribution_strategy: str):
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG)
     args = parse_args()
     
     MODEL_NAME = 'roberta-large'
@@ -110,7 +110,7 @@ if __name__ == '__main__':
         model = KerasTextClassifier(num_classes=4, pretrained_roberta_name=MODEL_NAME)
         model.compile(
             optimizer=keras.optimizers.Adam(learning_rate=1e-3),
-            loss=tf.keras.losses.CategoricalCrossentropy(from_logits=False),
+            loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
             metrics=['accuracy']
         )
     

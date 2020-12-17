@@ -1,6 +1,6 @@
 # Fine tune BERT on GCP
 
-Leverage GCP Ai Platform to speed up your ML workflow.
+Leverage GCP as a training job management platform to speed up your ML workflow.
 
 ## Prerequisites
 
