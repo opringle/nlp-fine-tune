@@ -73,6 +73,12 @@ The command returns a Cloud TPU Service Account with following format:
   bash scripts/train-cloud-gpu.sh
 ```
 
+- Train the model on a cloud TPU
+
+```bash
+  bash scripts/train-cloud-tpu.sh
+```
+
 ## Why use TPUs?
 
 Results training Roberta large (334M parameters)
@@ -82,8 +88,8 @@ Results training Roberta large (334M parameters)
 |1|NVIDIA_TESLA_K80|1|n1-standard-4|25%|36%|72%|100%|0.25| 
 |2|NVIDIA_TESLA_K80|2|n1-standard-4|25%|36%|72%|100%|0.44| 
 |8|NVIDIA_TESLA_V100|2|n1-standard-4|-|-|-|-|OOM|
-|16|CLOUD_TPU_V2|8|n1-highcpu-16||||||
-|16|CLOUD_TPU_V3|8|n1-highcpu-16||||||
+|16|CLOUD_TPU_V2|8|n1-highcpu-16|||||2400|
+|256|CLOUD_TPU_V3|8|n1-highcpu-16||||||
 
 ## Learnings
 
@@ -100,7 +106,7 @@ Results training Roberta large (334M parameters)
 - Pytorch lightning refactor
   - Upgrade to CUDA 11
   - Upgrade to latest pytorch
-  
+
 - Add model parameters to docker image so they don't need to be downloaded
 - Package training application with local testing
 - Visualize training with tensorboard
