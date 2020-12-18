@@ -11,7 +11,7 @@ import torch
 import pytorch_lightning as pl
 import multiprocessing as mp
 
-from .model import TextClassifier
+from src import TextClassifier
 
 
 def parse_args():

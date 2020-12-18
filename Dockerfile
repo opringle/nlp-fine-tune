@@ -52,11 +52,12 @@ RUN wget -nv \
 ENV PATH $PATH:/root/tools/google-cloud-sdk/bin
 RUN echo '[GoogleCompute]\nservice_account = default' > /etc/boto.cfg
 
-# Copy all training code to container
-RUN mkdir /root/trainer
-ADD trainer /root/trainer/
+# Copy all training code to container and install package
+RUN mkdir /root/src
+ADD src /root/src/
+COPY train.py /root/train.py
 
 RUN python -V
 
 # Set the entry point to invoke the training application
-ENTRYPOINT ["python", "-m", "trainer.task"]
+ENTRYPOINT ["python", "train.py"]
