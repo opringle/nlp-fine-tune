@@ -29,7 +29,13 @@ WORKDIR /root
 
 # Install python package requirements
 COPY requirements.txt /root/requirements.txt
-RUN pip install -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Download the Roberta model
+RUN mkdir /root/roberta
+RUN curl -L https://huggingface.co/roberta-large/resolve/main/pytorch_model.bin > /root/roberta/pytorch_model.bin \
+    && curl -L https://huggingface.co/roberta-large/resolve/main/config.json > /root/roberta/config.json
+
 
 # Install and configure google cloud sdk
 RUN wget -nv \

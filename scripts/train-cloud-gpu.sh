@@ -22,6 +22,9 @@ gcloud ai-platform jobs submit training "${JOB_NAME}" \
   -- \
   --job-dir $JOB_DIR \
   --train-data-file $TRAIN_DATA_FILE \
-  -- \
+  --pretrained_model_path /root/roberta/ \
   --batch-size 1 \
-  --epochs 1 \
+  --max_epochs 1 \
+  --gpus 2 \
+  --accelerator ddp \
+  --precision 16 \

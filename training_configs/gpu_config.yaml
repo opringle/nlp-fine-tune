@@ -17,8 +17,8 @@ trainingInput:
       count: 2
       # https://cloud.google.com/ai-platform/training/docs/using-gpus
       # https://cloud.google.com/compute/docs/gpus#gpu_comparison_chart
-      # type: NVIDIA_TESLA_K80 # $0.45 per hour per GPU | 12GB memory | 4.4 TFLOPS@FP32
-      type: NVIDIA_TESLA_V100 # $2.48 per hour per GPU | 16GB memory | 15.7 TFLOPS@FP32
+      type: NVIDIA_TESLA_K80 # $0.45 per hour per GPU | 12GB memory | 4.4 TFLOPS@FP32
+      # type: NVIDIA_TESLA_V100 # $2.48 per hour per GPU | 16GB memory | 15.7 TFLOPS@FP32
       # TPUS # $8 per hour per TPU | 128GB memory | 420 TFLOPS@FP32
       # type: NVIDIA_A100  # $3.1 per hour per GPU | 40GB memory | 19.5 TFLOPS@FP32 (requires A2 machine type)
       

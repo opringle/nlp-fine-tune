@@ -16,31 +16,19 @@ from .model import TextClassifier
 
 def parse_args():
     parser = argparse.ArgumentParser(description='GCP training application')
-    
     parser.add_argument('--job-dir', required=True, type=str)
     parser.add_argument('--train-data-file', required=True)
     parser.add_argument('--batch-size', type=int, required=True)
-
-    # add model specific args (OOOOH)
     parser = TextClassifier.add_model_specific_args(parser)
-
-    # add all the available trainer options to argparse
     parser = pl.Trainer.add_argparse_args(parser)
-
     return parser.parse_args()
 
 
-def get_dataloader(dataset, tokenizer, batch_size=32, shuffle=True):
+def get_dataset(dataset, tokenizer):
     dataset = dataset.map(lambda examples: tokenizer(examples['text'], truncation=True, padding='max_length'), batched=True)
     dataset = dataset.map(lambda examples: {'labels': examples['label']}, batched=True)
     dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
-    dataloader = torch.utils.data.DataLoader(
-      dataset, 
-      batch_size=batch_size, 
-      shuffle=shuffle,
-      num_workers=mp.cpu_count()
-    )
-    return dataloader
+    return dataset
 
 
 def wait_for_tpu_cluster_resolver_ready():
@@ -87,25 +75,44 @@ def wait_for_tpu_cluster_resolver_ready():
 
 if __name__ == '__main__':
     args = parse_args()
-    print(args)
     
     MODEL_NAME = 'roberta-large'
-    BATCH_SIZE = args.batch_size
 
-    # get loaders for model
+    # get pytorch datasets
     datasets = load_dataset('ag_news')
     train_ds = datasets['train']
     test_ds = datasets['test']
     tokenizer = RobertaTokenizer.from_pretrained(MODEL_NAME)
-    train_dataloader = get_dataloader(train_ds, tokenizer, batch_size=BATCH_SIZE, shuffle=True)
-    test_dataloader = get_dataloader(test_ds, tokenizer, batch_size=BATCH_SIZE, shuffle=False)
+    train_dataset = get_dataset(
+      train_ds, 
+      tokenizer,
+    )
+    test_dataset = get_dataset(
+      test_ds, 
+      tokenizer,
+    )
 
+    # define model and dataloaders
     model = TextClassifier(**vars(args))  # TODO: fix
+    train_dataloader = model.get_dataloader(
+      train_dataset,
+      shuffle=True,
+      pin_memory=isinstance(args.gpus, int),
+    )
+    test_dataloader = model.get_dataloader(
+        test_dataset,
+        shuffle=False,
+        pin_memory=isinstance(args.gpus, int),
+    )
     trainer = pl.Trainer.from_argparse_args(args)
     trainer.fit(
       model,
       train_dataloader,
       test_dataloader,
+    )
+
+    trainer.test(
+      test_dataloaders=test_dataloader,
     )
     
     # loss, accuracy = model.evaluate(test_ds)

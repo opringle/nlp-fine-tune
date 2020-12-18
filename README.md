@@ -1,6 +1,6 @@
 # Fine tune large models on GCP
 
-Leverage GCP as a training job management platform to speed up your ML workflow. This example shows how to structure an ML project so that you can train models on CPU, GPU or TPUs using pytorch.
+This repo shows how to leverage GCP Ai Platform Training, pytorch and pytorch-lightning to train models on CPU, GPUs or TPUs with minimal code changes. It is intended to provide a template for deep learning projects.
 
 ## Prerequisites
 
@@ -25,7 +25,7 @@ Leverage GCP as a training job management platform to speed up your ML workflow.
 ```
 - Get the tpu service account associated with your project
 ```bash
-gcloud beta services identity create --service tpu.googleapis.com --project $PROJECT_ID
+curl -H "Authorization: Bearer $(gcloud auth print-access-token)" https://ml.googleapis.com/v1/projects/${PROJECT_ID}:getConfig
 ```
 - Assign roles so the service account can read/write to GCS etc (editor is lazy way to do it)
 ```bash
@@ -52,7 +52,9 @@ gcloud beta services identity create --service tpu.googleapis.com --project $PRO
   docker run nlp \
     --job-dir . \
     --train-data-file data/df.pickle \
-    --batch-size 1
+    --batch-size 1 \
+    --max_epochs 10 \
+    --pretrained_model_path /root/roberta/ \
 ```
 
 - Upload your image to Google Container Registry (GCR), using Cloud Build to build and push the image faster.
@@ -61,7 +63,7 @@ gcloud beta services identity create --service tpu.googleapis.com --project $PRO
   gcloud builds submit --config cloudbuild.yaml .
 ```
 
-- Train the model on a cloud GPU
+- Train the model on GPUs in the cloud
 
 ```bash
   bash scripts/train-cloud-gpu.sh
@@ -87,19 +89,20 @@ Results training Roberta large (334M parameters)
 
 ## Learnings
 
-- It is possible to use pytorch with TPUs, however, it's a pain in the arse. You need to install the xla library and make significant modifications to the code. Using Keras and the strategy scope you can run in any configuration.
+- It is possible to use pytorch with TPUs, however, it's a pain in the arse. You need to install the xla library and make significant modifications to the code. 
+- Using Keras and the strategy scope you can run in any configuration.
 - Tensorflow is slower than Pytorch by a factor of 4 on GPUs for some jobs!
-- Pytorch lightning allows you to minimize the reconfiguration work required to train on CPUs, GPUs or TPUs :)
+- Pytorch lightning allows you to minimize the reconfiguration work required to train on CPUs, GPUs or TPUs. Allowing the researcher to focus on code not infrastructure.
 
 ## ToDo
 
+- Download data to docker image so it doesn't need to be downloaded when application starts
+  - Should I preprocess then upload tensors to GCS? Takes a while to process the dataset...
 - Refactor for pytorch
+- Train pytorch lightning model on single GPU
+- Train pytorch lightning model on multiple GPUs
 - Single V2/3 TPU training on 8 cores
 - Support training on X% of the data
-- Preprocess AG News to GCS
-- Download data to docker image so it doesn't need to be downloaded
 - Upgrade to CUDA 11
-- Add model parameters to docker image so they don't need to be downloaded
 - Package training application with local testing as per google groups
 - Visualize training with tensorboard
-- Use half precision training (FP16) to increase throughput
