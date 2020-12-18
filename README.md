@@ -98,13 +98,15 @@ Results training Roberta large (334M parameters)
 
 ## ToDo
 
-- Import error - is ddp causing import errors in my code??? - https://github.com/PyTorchLightning/pytorch-lightning/issues/4243
-- Download data to docker image so it doesn't need to be downloaded when application starts
-  - Should I preprocess then upload tensors to GCS? Takes a while to process the dataset... I could also preprocess data to tensors then save to local disk, then copy to docker container..
-- Refactor for pytorch
-- Train pytorch lightning model on single GPU
-- Train pytorch lightning model on multiple GPUs
+- Ddp is causing import errors in my code
+  - https://github.com/PyTorchLightning/pytorch-lightning/issues/4243
+  - I can refactor the code so im not running a module from inside a package.
+  -  https://pytorch-lightning.readthedocs.io/en/latest/multi_gpu.html
+- Train pytorch lightning model on multiple GPUs with ddp
 - Single V2/3 TPU training on 8 cores
+- Download processed data to docker image so it doesn't need to be downloaded & processed when application starts
+  - Should I preprocess then upload tensors to GCS? Takes a while to process the dataset... I could also preprocess data to tensors then save to local disk, then copy to docker container.. Code uses arrow to cache processed datasets...
+- Refactor for pytorch
 - Support training on X% of the data
 - Upgrade to CUDA 11
 - Package training application with local testing as per google groups
