@@ -91,23 +91,22 @@ Results training Roberta large (334M parameters)
 
 ## Learnings
 
-- It is possible to use pytorch with TPUs, however, it's a pain in the arse. You need to install the xla library and make significant modifications to the code. 
+- It is possible to use pytorch with TPUs, however, it's a pain in the arse. You need to install the xla library and make significant modifications to the code.
 - Using Keras and the strategy scope you can run in any configuration.
 - Tensorflow is slower than Pytorch by a factor of 4 on GPUs for some jobs!
 - Pytorch lightning allows you to minimize the reconfiguration work required to train on CPUs, GPUs or TPUs. Allowing the researcher to focus on code not infrastructure.
 
 ## ToDo
 
-- Ddp is causing import errors in my code
-  - https://github.com/PyTorchLightning/pytorch-lightning/issues/4243
-  - I can refactor the code so im not running a module from inside a package.
-  -  https://pytorch-lightning.readthedocs.io/en/latest/multi_gpu.html
-- Train pytorch lightning model on multiple GPUs with ddp
-- Single V2/3 TPU training on 8 cores
+- Support training on X% of the data
+- Visualize training with tensorboard
 - Download processed data to docker image so it doesn't need to be downloaded & processed when application starts
   - Should I preprocess then upload tensors to GCS? Takes a while to process the dataset... I could also preprocess data to tensors then save to local disk, then copy to docker container.. Code uses arrow to cache processed datasets...
-- Refactor for pytorch
-- Support training on X% of the data
+- Single V2/3 TPU training on 8 cores
+
 - Upgrade to CUDA 11
 - Package training application with local testing as per google groups
-- Visualize training with tensorboard
+  - https://pytorch-lightning.readthedocs.io/en/latest/multi_gpu.html
+  - https://github.com/PyTorchLightning/pytorch-lightning/issues/4243
+- Use model parallel training
+- Refactor

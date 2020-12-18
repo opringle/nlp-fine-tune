@@ -9,6 +9,7 @@ import json
 import time
 import torch
 import pytorch_lightning as pl
+from pytorch_lightning.loggers import TensorBoardLogger
 import multiprocessing as mp
 
 from src import TextClassifier
@@ -104,7 +105,12 @@ if __name__ == '__main__':
         shuffle=False,
         pin_memory=isinstance(args.gpus, int),
     )
-    trainer = pl.Trainer.from_argparse_args(args)
+    logger = TensorBoardLogger('logs', name='my_model')
+    trainer = pl.Trainer.from_argparse_args(
+      args, 
+      default_root_dir=args.job_dir,
+      logger=logger,
+    )
     trainer.fit(
       model,
       train_dataloader,

@@ -2,5 +2,4 @@
 .vscode
 .idea
 *.pyc
-lightning_logs
-trainer.egg-info
+logs
