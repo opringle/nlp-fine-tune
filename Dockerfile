@@ -22,7 +22,7 @@ RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
     pip install setuptools && \
     rm get-pip.py
 
-# install pytorch
+# install latest pytorch version that compiles with cuda 10.1
 RUN pip install torch==1.7.1+cu101 torchvision==0.8.2+cu101 torchaudio==0.7.2 -f https://download.pytorch.org/whl/torch_stable.html
 
 WORKDIR /root
@@ -35,7 +35,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN mkdir /root/roberta
 RUN curl -L https://huggingface.co/roberta-large/resolve/main/pytorch_model.bin > /root/roberta/pytorch_model.bin \
     && curl -L https://huggingface.co/roberta-large/resolve/main/config.json > /root/roberta/config.json
-
 
 # Install and configure google cloud sdk
 RUN wget -nv \

@@ -1,12 +1,14 @@
 # Fine tune large models on GCP
 
-This repo shows how to leverage GCP Ai Platform Training, pytorch and pytorch-lightning to train models on CPU, GPUs or TPUs with minimal code changes. It is intended to provide a template for deep learning projects.
+This repository shows how to leverage GCP Ai Platform Training, pytorch and pytorch-lightning to train models on CPU, GPUs or TPUs without concerning yourself with infrastructure.
+
+It is intended as a template for deep learning projects.
 
 ## Prerequisites
 
 - [install & configure Google Cloud SDK](https://cloud.google.com/sdk/docs/install)
 - [install docker](https://docs.docker.com/get-docker/)
-- Set docker system memory >= 4Gb 
+- Increase docker resource memory to 6 GB and disk image size to 16 GB
 - [install pyenv](https://realpython.com/intro-to-pyenv/)
 - Create & activate python virtual environment
 ```bash
@@ -52,9 +54,9 @@ curl -H "Authorization: Bearer $(gcloud auth print-access-token)" https://ml.goo
   docker run nlp \
     --job-dir . \
     --train-data-file data/df.pickle \
-    --batch-size 1 \
-    --max_epochs 10 \
     --pretrained_model_path /root/roberta/ \
+    --batch-size 1 \
+    --max_epochs 10
 ```
 
 - Upload your image to Google Container Registry (GCR), using Cloud Build to build and push the image faster.
@@ -96,8 +98,9 @@ Results training Roberta large (334M parameters)
 
 ## ToDo
 
+- Import error - is ddp causing import errors in my code??? - https://github.com/PyTorchLightning/pytorch-lightning/issues/4243
 - Download data to docker image so it doesn't need to be downloaded when application starts
-  - Should I preprocess then upload tensors to GCS? Takes a while to process the dataset...
+  - Should I preprocess then upload tensors to GCS? Takes a while to process the dataset... I could also preprocess data to tensors then save to local disk, then copy to docker container..
 - Refactor for pytorch
 - Train pytorch lightning model on single GPU
 - Train pytorch lightning model on multiple GPUs

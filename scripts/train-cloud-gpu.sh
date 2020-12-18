@@ -26,5 +26,5 @@ gcloud ai-platform jobs submit training "${JOB_NAME}" \
   --batch-size 1 \
   --max_epochs 1 \
   --gpus 2 \
-  --accelerator ddp \
   --precision 16 \
+  # --accelerator ddp \
