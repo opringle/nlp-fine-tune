@@ -20,8 +20,8 @@ gcloud ai-platform jobs submit training "${JOB_NAME}" \
   --region $REGION \
   --config $CONFIG_FILE \
   -- \
-  --distribution-strategy MirroredStrategy \
   --job-dir $JOB_DIR \
   --train-data-file $TRAIN_DATA_FILE \
-  --epochs 5 \
-  --batch-size 4 \
+  -- \
+  --batch-size 1 \
+  --epochs 1 \

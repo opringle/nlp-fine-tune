@@ -2,4 +2,4 @@
 .vscode
 .idea
 *.pyc
-logs
+lightning_logs
