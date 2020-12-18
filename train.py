@@ -19,6 +19,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='GCP training application')
     parser.add_argument('--job-dir', required=True, type=str)
     parser.add_argument('--train-data-file', required=True)
+    parser.add_argument('--max-train-samples', type=int)
     parser.add_argument('--batch-size', type=int, required=True)
     parser = TextClassifier.add_model_specific_args(parser)
     parser = pl.Trainer.add_argparse_args(parser)
@@ -93,12 +94,18 @@ if __name__ == '__main__':
       tokenizer,
     )
 
+    if args.max_train_samples:
+      sampler = torch.utils.data.RandomSampler(train_dataset, replacement=True, num_samples=args.max_train_samples)
+    else:
+      sampler = None
+
     # define model and dataloaders
     model = TextClassifier(**vars(args))  # TODO: fix
     train_dataloader = model.get_dataloader(
       train_dataset,
       shuffle=True,
       pin_memory=isinstance(args.gpus, int),
+      sampler=sampler,
     )
     test_dataloader = model.get_dataloader(
         test_dataset,

@@ -44,13 +44,15 @@ class TextClassifier(pl.LightningModule):
         dataset,
         shuffle: bool,
         pin_memory: bool,
+        sampler: torch.utils.data.Sampler=None,
     ):
         return DataLoader(
             dataset,
             batch_size=self.batch_size,
-            shuffle=shuffle,
+            shuffle=False if sampler is not None else shuffle,
             num_workers=mp.cpu_count(),
             pin_memory=pin_memory,
+            sampler=sampler,
         )
     
     def forward(self, input_ids, attention_mask):
